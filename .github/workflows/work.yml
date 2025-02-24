@@ -6,7 +6,11 @@ on:
 
 jobs:
   build:
+    name: Build Image and Push to Github Container Registry
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v2
