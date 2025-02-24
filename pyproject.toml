@@ -7,4 +7,5 @@ dependencies = [
     "fastapi[standard]>=0.115.8",
     "psycopg-pool>=3.2.4",
     "psycopg[binary]>=3.2.4",
+    "pydantic-settings>=2.8.0",
 ]

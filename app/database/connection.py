@@ -1,22 +1,15 @@
 from psycopg_pool import AsyncConnectionPool
 
-from ..config import SQL_CONFIG
+from ..config import settings
 
 pool: AsyncConnectionPool
 
 
-def _get_connection_string() -> str:
-    return (
-        f"dbname={SQL_CONFIG['database']} "
-        f"user={SQL_CONFIG['user']} "
-        f"password={SQL_CONFIG['password']} "
-        f"host={SQL_CONFIG['host']}"
-    )
-
-
 async def init_database():
     global pool
-    pool = AsyncConnectionPool(_get_connection_string(), min_size=4, max_size=25)
+    pool = AsyncConnectionPool(
+        settings.postgres_dsn.unicode_string(), min_size=4, max_size=25
+    )
     await pool.open()
 
 
