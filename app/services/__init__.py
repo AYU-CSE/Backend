@@ -1,1 +1,1 @@
-from .account_service import AccountService
+from .account import AccountService

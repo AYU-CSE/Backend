@@ -1,6 +1,6 @@
 from psycopg_pool import AsyncConnectionPool
 
-from ..config import settings
+from ..setting import settings
 
 pool: AsyncConnectionPool
 
