@@ -1,9 +1,10 @@
+from datetime import datetime, timezone, timedelta
+from uuid import UUID, uuid4
+
 import psycopg
-import uuid
 
 from ..models import Account, Session
 from ..repositories import AccountRepository, SessionRepository
-from datetime import datetime, timezone, timedelta
 from ..setting import settings
 from ..utils.password import verify_password
 
@@ -23,7 +24,7 @@ class AuthService:
         if not verify_password(password, account.password):
             return None
 
-        session_id = str(uuid.uuid4())
+        session_id = uuid4()
         expires_at = datetime.now(timezone.utc) + timedelta(
             seconds=settings.session_expire_time
         )
@@ -34,7 +35,7 @@ class AuthService:
             expires_at=expires_at,
         )
 
-        current_session = await self.session_repository.read(account.id)
+        current_session = await self.session_repository.read_by_account_id(account.id)
 
         if current_session is not None:
             await self.session_repository.delete(current_session.id)
@@ -46,10 +47,10 @@ class AuthService:
 
         return new_session
 
-    async def delete_session(self, session_id: str) -> bool:
+    async def delete_session(self, session_id: UUID) -> bool:
         return await self.session_repository.delete(session_id)
 
-    async def validate_session(self, session_id: str) -> bool:
+    async def validate_session(self, session_id: UUID) -> bool:
         session = await self.session_repository.read(session_id)
 
         if session is None:

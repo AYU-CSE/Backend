@@ -1,3 +1,5 @@
+from uuid import UUID
+
 import psycopg
 
 from ..models import Session
@@ -7,9 +9,23 @@ class SessionRepository:
     def __init__(self, connection: psycopg.AsyncConnection):
         self.connection = connection
 
-    async def read(self, id: str) -> Session | None:
+    async def read(self, session_id: UUID) -> Session | None:
         async with self.connection.cursor() as cursor:
-            await cursor.execute("SELECT * FROM session WHERE CAST(%s AS uuid)", (id,))
+            await cursor.execute("SELECT * FROM session WHERE id = %s", (session_id,))
+            record = await cursor.fetchone()
+
+            if record is None:
+                return None
+
+            return Session(
+                id=record[0],
+                account_id=record[1],
+                expires_at=record[2],
+            )
+
+    async def read_by_account_id(self, account_id: int) -> Session | None:
+        async with self.connection.cursor() as cursor:
+            await cursor.execute("SELECT * FROM session WHERE account_id = %s", (account_id,))
             record = await cursor.fetchone()
 
             if record is None:
@@ -45,9 +61,9 @@ class SessionRepository:
 
             return False
 
-    async def delete(self, id: str) -> bool:
+    async def delete(self, session_id: UUID) -> bool:
         async with self.connection.cursor() as cursor:
-            await cursor.execute("DELETE FROM session WHERE id = %s", (id,))
+            await cursor.execute("DELETE FROM session WHERE id = %s", (session_id,))
 
             if cursor.rowcount > 0:
                 return True
