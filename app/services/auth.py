@@ -5,7 +5,7 @@ from ..models import Account, Session
 from ..repositories import AccountRepository, SessionRepository
 from datetime import datetime, timezone, timedelta
 from ..setting import settings
-from ..utils import verify_password
+from ..utils.password import verify_password
 
 
 class AuthService:
@@ -15,7 +15,7 @@ class AuthService:
         self.session_repository = SessionRepository(connection)
 
     async def activate_session(self, username: str, password: str) -> Session | None:
-        account = await self.account_repository.read(username)
+        account = await self.account_repository.read_by_username(username)
 
         if account is None:
             return None
@@ -25,7 +25,7 @@ class AuthService:
 
         session_id = str(uuid.uuid4())
         expires_at = datetime.now(timezone.utc) + timedelta(
-            settings.session_expire_time
+            seconds=settings.session_expire_time
         )
 
         new_session = Session(
@@ -33,6 +33,11 @@ class AuthService:
             account_id=account.id,
             expires_at=expires_at,
         )
+
+        current_session = await self.session_repository.read(account.id)
+
+        if current_session is not None:
+            await self.session_repository.delete(current_session.id)
 
         success = await self.session_repository.create(new_session)
 

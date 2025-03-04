@@ -9,7 +9,7 @@ class SessionRepository:
 
     async def read(self, id: str) -> Session | None:
         async with self.connection.cursor() as cursor:
-            await cursor.execute("SELECT * FROM session WHERE id = %s", (id,))
+            await cursor.execute("SELECT * FROM session WHERE CAST(%s AS uuid)", (id,))
             record = await cursor.fetchone()
 
             if record is None:
@@ -25,7 +25,7 @@ class SessionRepository:
         async with self.connection.cursor() as cursor:
             await cursor.execute(
                 "INSERT INTO session (id, account_id, expires_at) VALUES (%s, %s, %s)",
-                (session.id, session.account_id, session.expires_at),
+                (str(session.id), session.account_id, session.expires_at),
             )
 
             if cursor.rowcount > 0:
@@ -36,7 +36,7 @@ class SessionRepository:
     async def update(self, session: Session) -> bool:
         async with self.connection.cursor() as cursor:
             await cursor.execute(
-                "UPDATE session SET account_id = %s, expired_at = %s WHERE id = %s",
+                "UPDATE session SET account_id = %s, expires_at = %s WHERE id = %s",
                 (session.account_id, session.expires_at, session.id),
             )
 

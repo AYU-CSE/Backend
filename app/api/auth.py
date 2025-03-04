@@ -7,13 +7,17 @@ from ..database import get_connection
 from ..models import Session
 from ..services import AuthService
 
-auth_router = APIRouter(prefix="/", tags=["auth"])
+auth_router = APIRouter(tags=["auth"])
 
 DatabaseDep = Annotated[psycopg.AsyncConnection, Depends(get_connection)]
 
+async def get_current_session(database: DatabaseDep, session_id: str | None) -> bool:
+    auth_service = AuthService(database)
+    return await auth_service.validate_session(session_id)
+
 
 @auth_router.post("/token", response_model=Session)
-async def get_token(username: str, password: str, database: DatabaseDep):
+async def get_token(database: DatabaseDep, username: str, password: str):
     auth_service = AuthService(database)
 
     new_session = await auth_service.activate_session(username, password)
@@ -25,7 +29,7 @@ async def get_token(username: str, password: str, database: DatabaseDep):
 
 
 @auth_router.delete("/token")
-async def delete_token(session_id: str, database: DatabaseDep):
+async def delete_token(database: DatabaseDep, session_id: str):
     auth_service = AuthService(database)
     result = await auth_service.delete_session(session_id)
 
@@ -33,3 +37,4 @@ async def delete_token(session_id: str, database: DatabaseDep):
         return Response(status_code=status.HTTP_200_OK)
     else:
         return Response(status_code=status.HTTP_404_NOT_FOUND)
+
