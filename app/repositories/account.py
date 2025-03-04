@@ -7,7 +7,7 @@ class AccountRepository:
     def __init__(self, connection: psycopg.AsyncConnection):
         self.connection = connection
 
-    async def get_account(self, account_id: int) -> Account | None:
+    async def read(self, account_id: int) -> Account | None:
         async with self.connection.cursor() as cursor:
             await cursor.execute("SELECT * FROM account WHERE id = %s", (account_id,))
             record = await cursor.fetchone()
@@ -24,7 +24,7 @@ class AccountRepository:
                 student_number=record[5],
             )
 
-    async def get_account_by_username(self, username: str) -> Account | None:
+    async def read_by_username(self, username: str) -> Account | None:
         async with self.connection.cursor() as cursor:
             await cursor.execute(
                 "SELECT * FROM account WHERE username = %s", (username,)
@@ -43,11 +43,17 @@ class AccountRepository:
                 student_number=record[5],
             )
 
-    async def create_account(self, account: Account) -> bool:
+    async def create(self, account: Account) -> bool:
         async with self.connection.cursor() as cursor:
             await cursor.execute(
                 "INSERT INTO account (username, nickname, password, email, student_number) VALUES (%s, %s, %s, %s, %s) RETURNING id",
-                (account.username, account.password, account.email),
+                (
+                    account.username,
+                    account.nickname,
+                    account.password,
+                    account.email,
+                    account.student_number,
+                ),
             )
 
             if cursor.rowcount > 0:
@@ -55,7 +61,7 @@ class AccountRepository:
 
             return False
 
-    async def update_account(self, account: Account) -> bool:
+    async def update(self, account: Account) -> bool:
         async with self.connection.cursor() as cursor:
             await cursor.execute(
                 "UPDATE account SET username = %s, nickname = %s, password = %s, email = %s, student_number = %s WHERE id = %s",
@@ -74,7 +80,7 @@ class AccountRepository:
 
             return False
 
-    async def delete_account(self, account_id: int) -> bool:
+    async def delete(self, account_id: int) -> bool:
         async with self.connection.cursor() as cursor:
             await cursor.execute("DELETE FROM account WHERE id = %s", (account_id,))
 

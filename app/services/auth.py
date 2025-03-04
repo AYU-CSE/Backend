@@ -1,0 +1,67 @@
+import psycopg
+import uuid
+
+from ..models import Account, Session
+from ..repositories import AccountRepository, SessionRepository
+from datetime import datetime, timezone, timedelta
+from ..setting import settings
+from ..utils import verify_password
+
+
+class AuthService:
+    def __init__(self, connection: psycopg.AsyncConnection):
+        self.connection = connection
+        self.account_repository = AccountRepository(connection)
+        self.session_repository = SessionRepository(connection)
+
+    async def activate_session(self, username: str, password: str) -> Session | None:
+        account = await self.account_repository.read(username)
+
+        if account is None:
+            return None
+
+        if not verify_password(password, account.password):
+            return None
+
+        session_id = str(uuid.uuid4())
+        expires_at = datetime.now(timezone.utc) + timedelta(
+            settings.session_expire_time
+        )
+
+        new_session = Session(
+            id=session_id,
+            account_id=account.id,
+            expires_at=expires_at,
+        )
+
+        success = await self.session_repository.create(new_session)
+
+        if not success:
+            return None
+
+        return new_session
+
+    async def delete_session(self, session_id: str) -> bool:
+        return await self.session_repository.delete(session_id)
+
+    async def validate_session(self, session_id: str) -> bool:
+        session = await self.session_repository.read(session_id)
+
+        if session is None:
+            return False
+
+        if session.expires_at < datetime.now(timezone.utc):
+            return False
+
+        return True
+
+    async def get_account_from_session(self, session_id: str) -> Account | None:
+        session = await self.session_repository.read(session_id)
+
+        if session is None:
+            return None
+
+        if session.expires_at < datetime.now(timezone.utc):
+            return None
+
+        return await self.account_repository.read(session.account_id)

@@ -11,6 +11,7 @@ account_router = APIRouter(prefix="/account", tags=["account"])
 
 DatabaseDep = Annotated[psycopg.AsyncConnection, Depends(get_connection)]
 
+
 @account_router.get("/{account_id}")
 async def get_accounts(account_id: int, database: DatabaseDep):
     account_service = AccountService(database)
