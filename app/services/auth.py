@@ -61,7 +61,7 @@ class AuthService:
 
         return True
 
-    async def get_account_from_session(self, session_id: str) -> Account | None:
+    async def get_account_from_session(self, session_id: UUID) -> Account | None:
         session = await self.session_repository.read(session_id)
 
         if session is None:
