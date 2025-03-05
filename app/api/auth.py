@@ -11,6 +11,7 @@ auth_router = APIRouter(tags=["auth"])
 
 DatabaseDep = Annotated[psycopg.AsyncConnection, Depends(get_connection)]
 
+
 async def get_current_session(database: DatabaseDep, session_id: str | None) -> bool:
     auth_service = AuthService(database)
     return await auth_service.validate_session(session_id)
@@ -37,4 +38,3 @@ async def delete_token(database: DatabaseDep, session_id: str):
         return Response(status_code=status.HTTP_200_OK)
     else:
         return Response(status_code=status.HTTP_404_NOT_FOUND)
-

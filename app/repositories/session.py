@@ -25,7 +25,9 @@ class SessionRepository:
 
     async def read_by_account_id(self, account_id: int) -> Session | None:
         async with self.connection.cursor() as cursor:
-            await cursor.execute("SELECT * FROM session WHERE account_id = %s", (account_id,))
+            await cursor.execute(
+                "SELECT * FROM session WHERE account_id = %s", (account_id,)
+            )
             record = await cursor.fetchone()
 
             if record is None:

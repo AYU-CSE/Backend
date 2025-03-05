@@ -43,7 +43,7 @@ async def update_account(
         raise HTTPException(status.HTTP_401_UNAUTHORIZED)
 
     account_service = AccountService(database)
-    
+
     if account_id != account.id:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Account ID mismatch")
 
@@ -57,7 +57,6 @@ async def update_account(
 
 @account_router.delete("/{account_id}")
 async def delete_account(
-    
     database: DatabaseDep,
     account_id: int,
     session_valid: bool = Depends(get_current_session),
@@ -66,7 +65,7 @@ async def delete_account(
         raise HTTPException(status.HTTP_401_UNAUTHORIZED)
 
     account_service = AccountService(database)
-    
+
     result = await account_service.delete_account(account_id)
 
     if result is True:
