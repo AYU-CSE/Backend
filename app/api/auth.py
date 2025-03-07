@@ -1,10 +1,12 @@
 from typing import Annotated
+from uuid import UUID
 
 import psycopg
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Response, status
 
 from ..database import get_connection
-from ..models import Session
+from ..models.account import GetAccountDTO
+from ..models.session import Session
 from ..services import AuthService
 
 auth_router = APIRouter(tags=["auth"])
@@ -12,9 +14,11 @@ auth_router = APIRouter(tags=["auth"])
 DatabaseDep = Annotated[psycopg.AsyncConnection, Depends(get_connection)]
 
 
-async def get_current_session(database: DatabaseDep, session_id: str | None) -> bool:
+async def get_current_account(
+    database: DatabaseDep, session_id: UUID = Header(...)
+) -> GetAccountDTO | None:
     auth_service = AuthService(database)
-    return await auth_service.validate_session(session_id)
+    return await auth_service.get_account_from_session(session_id)
 
 
 @auth_router.post("/token", response_model=Session)
@@ -30,7 +34,7 @@ async def get_token(database: DatabaseDep, username: str, password: str):
 
 
 @auth_router.delete("/token")
-async def delete_token(database: DatabaseDep, session_id: str):
+async def delete_token(database: DatabaseDep, session_id: UUID = Header(...)):
     auth_service = AuthService(database)
     result = await auth_service.delete_session(session_id)
 

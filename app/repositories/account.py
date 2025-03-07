@@ -1,6 +1,6 @@
 import psycopg
 
-from ..models import Account
+from ..models.account import Account
 
 
 class AccountRepository:
@@ -56,35 +56,28 @@ class AccountRepository:
                 ),
             )
 
-            if cursor.rowcount > 0:
-                return True
+            return cursor.rowcount > 0
 
-            return False
+    async def update(self, account_id: int, account: dict) -> bool:
+        update_fields = []
+        parameters = []
 
-    async def update(self, account: Account) -> bool:
+        for field, value in account.items():
+            update_fields.append(f"{field} = %s")
+            parameters.append(value)
+
+        parameters.append(account_id)
+
         async with self.connection.cursor() as cursor:
             await cursor.execute(
-                "UPDATE account SET username = %s, nickname = %s, password = %s, email = %s, student_number = %s WHERE id = %s",
-                (
-                    account.username,
-                    account.nickname,
-                    account.password,
-                    account.email,
-                    account.student_number,
-                    account.id,
-                ),
+                f"UPDATE account SET {', '.join(update_fields)} WHERE id = %s",
+                parameters,
             )
 
-            if cursor.rowcount > 0:
-                return True
-
-            return False
+            return cursor.rowcount > 0
 
     async def delete(self, account_id: int) -> bool:
         async with self.connection.cursor() as cursor:
             await cursor.execute("DELETE FROM account WHERE id = %s", (account_id,))
 
-            if cursor.rowcount > 0:
-                return True
-
-            return False
+            return cursor.rowcount > 0

@@ -1,9 +1,10 @@
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
 
 import psycopg
 
-from ..models import Account, Session
+from ..models.account import GetAccountDTO
+from ..models.session import Session
 from ..repositories import AccountRepository, SessionRepository
 from ..setting import settings
 from ..utils.password import verify_password
@@ -50,18 +51,7 @@ class AuthService:
     async def delete_session(self, session_id: UUID) -> bool:
         return await self.session_repository.delete(session_id)
 
-    async def validate_session(self, session_id: UUID) -> bool:
-        session = await self.session_repository.read(session_id)
-
-        if session is None:
-            return False
-
-        if session.expires_at < datetime.now(timezone.utc):
-            return False
-
-        return True
-
-    async def get_account_from_session(self, session_id: UUID) -> Account | None:
+    async def get_account_from_session(self, session_id: UUID) -> GetAccountDTO | None:
         session = await self.session_repository.read(session_id)
 
         if session is None:
@@ -70,4 +60,9 @@ class AuthService:
         if session.expires_at < datetime.now(timezone.utc):
             return None
 
-        return await self.account_repository.read(session.account_id)
+        raw_account = await self.account_repository.read(session.account_id)
+
+        if raw_account is None:
+            return None
+
+        return GetAccountDTO(**raw_account.model_dump(exclude_unset=True))

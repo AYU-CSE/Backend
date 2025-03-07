@@ -4,9 +4,9 @@ import psycopg
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from ..database import get_connection
-from ..models import Account
+from ..models.account import Account, GetAccountDTO, UpdateAccountDTO
 from ..services import AccountService
-from .auth import get_current_session
+from .auth import get_current_account
 
 account_router = APIRouter(prefix="/account", tags=["account"])
 
@@ -17,9 +17,9 @@ DatabaseDep = Annotated[psycopg.AsyncConnection, Depends(get_connection)]
 async def get_accounts(
     database: DatabaseDep,
     account_id: int,
-    session_valid: bool = Depends(get_current_session),
+    current_account: GetAccountDTO | None = Depends(get_current_account),
 ):
-    if not session_valid:
+    if current_account is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED)
 
     account_service = AccountService(database)
@@ -36,18 +36,15 @@ async def create_account(database: DatabaseDep, account: Account):
 async def update_account(
     database: DatabaseDep,
     account_id: int,
-    account: Account,
-    session_valid: bool = Depends(get_current_session),
+    account: UpdateAccountDTO,
+    current_account: GetAccountDTO | None = Depends(get_current_account),
 ):
-    if not session_valid:
+    if current_account is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED)
 
     account_service = AccountService(database)
 
-    if account_id != account.id:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Account ID mismatch")
-
-    result = await account_service.update_account(account)
+    result = await account_service.update_account(account_id, account)
 
     if result is True:
         return Response(status_code=status.HTTP_200_OK)
@@ -59,9 +56,9 @@ async def update_account(
 async def delete_account(
     database: DatabaseDep,
     account_id: int,
-    session_valid: bool = Depends(get_current_session),
+    current_account: GetAccountDTO | None = Depends(get_current_account),
 ):
-    if not session_valid:
+    if current_account is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED)
 
     account_service = AccountService(database)

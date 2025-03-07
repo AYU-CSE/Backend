@@ -2,7 +2,7 @@ from uuid import UUID
 
 import psycopg
 
-from ..models import Session
+from ..models.session import Session
 
 
 class SessionRepository:
