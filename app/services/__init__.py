@@ -1,4 +1,4 @@
-from .account import AccountService
-from .auth import AuthService
+from . import account
+from . import auth
 
-__all__ = ["AccountService", "AuthService"]
+__all__ = ["account", "auth"]

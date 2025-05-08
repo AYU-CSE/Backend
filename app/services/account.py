@@ -1,36 +1,36 @@
-import psycopg
+from sqlalchemy.orm import Session
+from fastapi import HTTPException, status
 
-from ..models.account import Account, GetAccountDTO, UpdateAccountDTO
-from ..repositories.account import AccountRepository
-from ..utils.password import get_password_hash, identify_password
+from app import crud, models, schemas
+from app.core.security import get_password_hash
 
 
-class AccountService:
-    def __init__(self, connection: psycopg.AsyncConnection):
-        self.connection = connection
-        self.account_repository = AccountRepository(connection)
-
-    async def get_account_by_id(self, account_id: int) -> GetAccountDTO | None:
-        account = await self.account_repository.read(account_id)
-
-        if account is None:
-            return None
-
-        return GetAccountDTO(**account.model_dump())
-
-    async def create_account(self, account: Account) -> bool:
-        if identify_password(account.password) is None:
-            account.password = get_password_hash(account.password)
-
-        return await self.account_repository.create(account)
-
-    async def update_account(self, account_id: int, account: UpdateAccountDTO) -> bool:
-        if identify_password(account.password) is None:
-            account.password = get_password_hash(account.password)
-
-        return await self.account_repository.update(
-            account_id, account.model_dump(exclude_unset=True)
+def create_account(db: Session, *, account_in: schemas.AccountCreate) -> models.Account:
+    if crud.account.get_account_by_username(db, username=account_in.username):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username already registered",
+        )
+    if crud.account.get_account_by_email(db, email=str(account_in.email)):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered",
+        )
+    if crud.account.get_account_by_student_number(
+        db, student_number=account_in.student_number
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Student number already registered",
         )
 
-    async def delete_account(self, account_id: int) -> bool:
-        return await self.account_repository.delete(account_id)
+    hashed_password = get_password_hash(account_in.password)
+
+    create_data = account_in.model_dump(exclude={"password"})  # password 필드 제외
+    create_data["password"] = hashed_password  # 해시된 비밀번호 추가
+
+    db_account = crud.account.create_account(
+        db=db, account_in=schemas.AccountCreate(**create_data)
+    )  # 임시 스키마 변환 또는 CRUD 수정 필요
+
+    return db_account

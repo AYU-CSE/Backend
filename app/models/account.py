@@ -1,61 +1,36 @@
-from typing import Annotated
+from typing import TYPE_CHECKING
 
-from pydantic import AfterValidator, BaseModel, EmailStr, Field
+from sqlalchemy import BigInteger, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-allowed_domains = ["@gs.anyang.ac.kr", "@anyang.ac.kr"]
+from app.database import base
+from app.models.account_group import account_group
 
+if TYPE_CHECKING:
+    from .post import Post
+    from .comment import Comment
+    from .like import Like
+    from .session import Session
+    from .group import Group
 
-def email_validator(value: EmailStr) -> EmailStr:
-    if value is None:
-        return value
+class Account(base):
+    __tablename__ = "account"
 
-    for domain in allowed_domains:
-        if value.endswith(domain):
-            return value
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, index=True)
+    username: Mapped[str] = mapped_column(
+        String(100), unique=True, nullable=False, index=True
+    )
+    nickname: Mapped[str] = mapped_column(String(50), nullable=False)
+    password: Mapped[str] = mapped_column(String(255), nullable=False)
+    email: Mapped[str] = mapped_column(String(100), nullable=False)
+    student_number: Mapped[str] = mapped_column(String(9), nullable=False, unique=True)
 
-    raise ValueError(f"email should be ended with: {', '.join(allowed_domains)}")
+    # Relationships
+    posts: Mapped[list["Post"]] = relationship("Post", back_populates="author")
+    comments: Mapped[list["Comment"]] = relationship("Comment", back_populates="author")
+    likes: Mapped[list["Like"]] = relationship("Like", back_populates="account")
+    sessions: Mapped[list["Session"]] = relationship("Session", back_populates="account", cascade="all, delete-orphan")
+    groups: Mapped[list["Group"]] = relationship("Group", secondary=account_group, back_populates="accounts")
 
-
-class Account(BaseModel):
-    id: int
-    username: str
-    nickname: str
-    password: str
-    email: EmailStr
-    student_number: str
-
-    class Config:
-        extra = "ignore"
-
-
-class CreateAccountDTO(BaseModel):
-    username: str = Field(..., min_length=10, max_length=50)
-    nickname: str = Field(..., min_length=10, max_length=50)
-    password: str = Field(..., min_length=12, max_length=100)
-    email: Annotated[EmailStr, AfterValidator(email_validator)]
-    student_number: str = Field(..., pattern=r"^\d{4}[A-Z]\d{4}$")
-
-    class Config:
-        extra = "ignore"
-
-
-class UpdateAccountDTO(BaseModel):
-    username: str | None = Field(None, min_length=10, max_length=50)
-    nickname: str | None = Field(None, min_length=10, max_length=50)
-    password: str | None = Field(None, min_length=12, max_length=100)
-    email: Annotated[EmailStr, AfterValidator(email_validator)] | None
-    student_number: str | None = Field(None, pattern=r"^\d{4}[A-Z]\d{4}$")
-
-    class Config:
-        extra = "ignore"
-
-
-class GetAccountDTO(BaseModel):
-    id: int
-    username: str
-    nickname: str
-    email: EmailStr
-    student_number: str
-
-    class Config:
-        extra = "ignore"
+    def __repr__(self) -> str:
+        return f"<Account(id={self.id}, username={self.username}, nickname={self.nickname})>"
