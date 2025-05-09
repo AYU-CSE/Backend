@@ -85,8 +85,10 @@ def update_account(
 def delete_account(db: Session, *, account_id: int) -> models.Account | None:
     """ID로 계정을 삭제합니다."""
     db_account = get_account(db, account_id)
-    if db_account:
-        db.delete(db_account)
-        db.commit()
-        return db_account
-    return None
+    
+    if db_account is None:
+        return None
+        
+    db.delete(db_account)
+    db.commit()
+    return db_account

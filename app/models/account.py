@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from .session import Session
     from .group import Group
 
+
 class Account(base):
     __tablename__ = "account"
 
@@ -29,8 +30,12 @@ class Account(base):
     posts: Mapped[list["Post"]] = relationship("Post", back_populates="author")
     comments: Mapped[list["Comment"]] = relationship("Comment", back_populates="author")
     likes: Mapped[list["Like"]] = relationship("Like", back_populates="account")
-    sessions: Mapped[list["Session"]] = relationship("Session", back_populates="account", cascade="all, delete-orphan")
-    groups: Mapped[list["Group"]] = relationship("Group", secondary=account_group, back_populates="accounts")
+    sessions: Mapped[list["Session"]] = relationship(
+        "Session", back_populates="account", cascade="all, delete-orphan"
+    )
+    groups: Mapped[list["Group"]] = relationship(
+        "Group", secondary=account_group, back_populates="accounts"
+    )
 
     def __repr__(self) -> str:
         return f"<Account(id={self.id}, username={self.username}, nickname={self.nickname})>"
