@@ -6,7 +6,7 @@ from .comment import CommentBase, CommentCreate, CommentUpdate
 from .group import GroupBase, GroupCreate, GroupUpdate
 from .like import LikeCreate, LikeResponse
 from .permission import PermissionCreate, PermissionResponse
-from .post import PostCreate, PostResponse
+from .post import PostCreate, PostResponse, PostUpdate
 
 __all__ = [
     # Account Schemas
@@ -41,4 +41,5 @@ __all__ = [
     # Post Schemas
     "PostCreate",
     "PostResponse",
+    "PostUpdate"
 ]

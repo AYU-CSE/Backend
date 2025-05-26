@@ -10,7 +10,7 @@ router = APIRouter()
 @router.post(
     "/", response_model=schemas.AccountRead, status_code=status.HTTP_201_CREATED
 )
-def create_account_endpoint(
+def create_account(
     *,
     db: Session = Depends(deps.get_db),
     account_in: schemas.AccountCreate,  # API 요청 본문 스키마

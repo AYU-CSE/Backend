@@ -10,7 +10,7 @@ router = APIRouter()
 
 
 @router.post("/login", response_model=schemas.LoginResponse)
-def login_for_session(
+def login(
     response: Response,  # 쿠키 설정을 위해 Response 객체 필요
     login_request: schemas.LoginRequest,  # JSON body로 받을 경우
     db: Session = Depends(deps.get_db),

@@ -3,9 +3,14 @@ from pydantic import BaseModel
 
 
 class PostCreate(BaseModel):
+    board_id: int
     title: str
     content: str
 
+class PostUpdate(BaseModel):
+    board_id: int
+    title: str | None = None
+    content: str | None = None
 
 class PostResponse(BaseModel):
     id: int
